@@ -31,6 +31,21 @@ def _gwt_war_impl(ctx):
       output_dir,
     )
 
+  # Copy assets into the output war
+  if len(ctx.files.assets) > 0:
+    cmd += "mkdir -p %s\ncp -LR %s %s\n" % (
+      output_dir + "/assets",
+      "war/assets/assets.txt",
+      output_dir + "/assets/assets.txt"
+    )
+    for asset in ctx.files.assets:
+      asset_dir = asset.path[:-len(asset.basename)]
+      cmd += "mkdir -p %s\ncp -LR %s %s\n" % (
+        output_dir + "/" + asset_dir,
+        "war/" + asset.path,
+        output_dir + "/" + asset.path
+      )
+
   # Don't include the unit cache in the output
   cmd += "rm -rf %s/gwt-unitCache\n" % output_dir
 
@@ -53,7 +68,7 @@ def _gwt_war_impl(ctx):
 
   # Execute the command
   ctx.action(
-    inputs = ctx.files.pubs + list(all_deps) + ctx.files._jdk + ctx.files._zip,
+    inputs = ctx.files.assets + ctx.files.pubs + list(all_deps) + ctx.files._jdk + ctx.files._zip,
     outputs = [output_war],
     mnemonic = "GwtCompile",
     progress_message = "GWT compiling " + output_war.short_path,
@@ -65,6 +80,7 @@ _gwt_war = rule(
   attrs = {
     "deps": attr.label_list(allow_files=FileType([".jar"])),
     "pubs": attr.label_list(allow_files=True),
+    "assets": attr.label_list(allow_files=True),
     "modules": attr.string_list(mandatory=True),
     "output_root": attr.string(default="."),
     "compiler_flags": attr.string_list(),
@@ -165,6 +181,7 @@ def gwt_application(
     resources=[],
     modules=[],
     pubs=[],
+    assets=[],
     deps=[],
     visibility=[],
     output_root=".",
@@ -273,6 +290,7 @@ def gwt_application(
     modules = modules,
     visibility = visibility,
     pubs = pubs,
+    assets = assets,
     compiler_flags = compiler_flags,
     jvm_flags = compiler_jvm_flags,
   )
@@ -287,7 +305,7 @@ def gwt_application(
     ],
     modules = modules,
     visibility = visibility,
-    pubs = pubs,
+    pubs = pubs + assets,
     dev_flags = dev_flags,
     jvm_flags = dev_jvm_flags,
   )
