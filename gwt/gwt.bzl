@@ -39,11 +39,12 @@ def _gwt_war_impl(ctx):
       output_dir + "/assets/assets.txt"
     )
     for asset in ctx.files.assets:
-      asset_dir = asset.path[:-len(asset.basename)]
+      asset_path = "assets/" + asset.path.split("assets/")[1]
+      asset_dir = asset_path[:-len(asset.basename)]
       cmd += "mkdir -p %s\ncp -LR %s %s\n" % (
         output_dir + "/" + asset_dir,
-        "war/" + asset.path,
-        output_dir + "/" + asset.path
+        "war/" + asset_path,
+        output_dir + "/" + asset_path
       )
 
   # Don't include the unit cache in the output
